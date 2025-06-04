@@ -1,4 +1,4 @@
-# 🚀 Intelligensi.ai V2
+# 🚀 Intelligensi.ai Hackathon Met University
 
 ![Intelligensi.ai Logo](./public/Intelligensi-logo.png)
 
@@ -13,7 +13,6 @@ This version introduces a **full-stack architecture** with:
 ---
 
 ## 📁 **Project Structure**
-
 
 ---
 
@@ -36,8 +35,8 @@ This version introduces a **full-stack architecture** with:
 ## 🛠️ **Installation & Setup**
 ### ✅ **1. Clone the repo**
 ```bash
-git clone https://github.com/intelligensi-ai/Intelligensi.ai.v2.git
-cd Intelligensi.ai.v2
+git clone https://github.com/intelligensi-ai/theme-craft-hackathon
+cd theme-craft-hackathon
 
 # Install frontend dependencies
 cd frontend
