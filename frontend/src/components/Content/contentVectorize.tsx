@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { fetchDrupalContent, ContentNode } from '../Lib/fetchDrupalContent';
+import { fetchDrupalContent, ContentNode } from '../lib/fetchDrupalContent';
 import { ICMS, ISite } from '../../types/sites';
 
 interface VectorizeProps {

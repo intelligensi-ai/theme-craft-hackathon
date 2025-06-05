@@ -4,7 +4,7 @@
 
 # Node
 node_modules/
-lib/
+/lib/
 *.log
 
 # Build outputs
