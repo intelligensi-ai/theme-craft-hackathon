@@ -1,7 +1,5 @@
 # 🚀 Intelligensi.ai Hackathon Met University
 
-![Intelligensi.ai Logo](./public/Intelligensi-logo.png)
-
 ## 🌐 **About the Project**
 **Intelligensi.ai V2** is an AI-powered content migration platform designed to automate and streamline the process of migrating legacy CMS content, media, and design to modern, AI-enhanced systems.  
 This version introduces a **full-stack architecture** with:
