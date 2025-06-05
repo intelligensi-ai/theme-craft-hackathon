@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { fetchDrupalContent, ContentNode as DrupalContentNode } from '../lib/fetchDrupalContent';
+import { fetchDrupalContent, ContentNode as DrupalContentNode } from '../Lib/fetchDrupalContent';
 import { ISite } from '../../types/sites';
 // Using text fallbacks for icons to avoid type issues
 

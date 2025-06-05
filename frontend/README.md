@@ -17,11 +17,10 @@ A modern React-based frontend application for Intelligensi.ai, built with Create
    ```
 
 2. Install dependencies
-   ```bash
+
    npm install
    # or
    yarn install
-   ```
 
 ### Available Scripts
 

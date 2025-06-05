@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ISite } from '../../types/sites';
-import { fetchDrupalContent, ContentNode } from '../lib/fetchDrupalContent';
+import { fetchDrupalContent, ContentNode } from '../Lib/fetchDrupalContent';
 interface ContentPreviewProps {
   site: ISite;
   onClose: () => void;
