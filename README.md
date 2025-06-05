@@ -16,24 +16,53 @@ This version introduces a **full-stack architecture** with:
 
 ---
 
-## 🚀 **Tech Stack**
-### 🛠️ **Frontend**
-- **React 18** + **TypeScript**  
-- **Tailwind CSS** for styling  
-- **Vite** for faster builds  
-- **Axios** for API calls  
-- **Firebase Auth** for authentication  
+### **Tech Stack**
 
-### 🔥 **Backend**
-- **Node.js + TypeScript**  
-- **Firebase Functions** for serverless execution  
-- **Supabase** or **Weaviate** for vector database queries  
-- **BigQuery** for scalable data management  
+A modern, full-stack TypeScript application with a serverless backend and cloud infrastructure.
+
+### Frontend
+
+React - Main frontend library
+TypeScript - For type-safe JavaScript
+Firebase Authentication - User authentication
+Firebase Hosting - Frontend deployment
+Material-UI (MUI) - UI component library
+React Query - Data fetching and state management
+Axios - HTTP client for API requests
+React Hook Form - Form handling
+Zod - Schema validation
+React Router - Client-side routing
+
+
+### **Backend**
+
+Firebase Functions - Serverless backend
+Node.js - JavaScript runtime
+TypeScript - Type-safe JavaScript
+Supabase - Database and authentication
+AWS SDK - For AWS Lightsail integration
+Express.js - Web application framework
+Zod - Schema validation
+Axios - HTTP client
+PostgreSQL - Database (via Supabase)
+Weaviate - Vector database for AI/ML features
+OpenAI API - AI/ML capabilities
 
 ---
 
-## 🛠️ **Installation & Setup**
+### DevOps & Infrastructure
 
+AWS Lightsail - Cloud hosting for CMS such as Drupal and Wordpress sites
+Firebase CLI - Deployment and management
+Firebase Emulators - Local development
+Docker - Containerization (implied by Drupal deployment)
+Git - Version control
+Development Tools
+ESLint - Code linting
+Prettier - Code formatting
+npm - Package management
+
+## 🛠️ **Installation & Setup**
 
 ## Backend
 
@@ -54,18 +83,20 @@ npm install
 You’ll be given a .env file with all necessary values.
 Place it in the functions/ directory:
 
-
 # Confirm the file is present
 3. Login to Firebase
 
 firebase login
+
 You’ll be prompted in the browser. Use the same email you shared with the team to access the project.
 
 4. Run Locally
 
 npm run serve
+
 This builds the project and starts the local emulator.
 Local functions will be available at:
+
 http://localhost:5001/<project-id>/us-central1/<function-name>
 
 5. Deploy to Firebase
