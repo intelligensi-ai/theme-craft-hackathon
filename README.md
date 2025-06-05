@@ -18,7 +18,7 @@ This version introduces a **full-stack architecture** with:
 
 ### **Tech Stack**
 
-A modern, full-stack TypeScript application with a serverless backend and cloud infrastructure.
+A modern, full-stack TypeScript application with a serverless backend and cloud infrastructure. The structure of the project is divided into frontend / backend on the same repo - both need to have dependecies installed seperately and be running independetly.
 
 ### Frontend
 
