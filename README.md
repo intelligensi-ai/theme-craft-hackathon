@@ -68,7 +68,7 @@ npm - Package management
 ### Installation
 
 1. Clone the repository
-   git clone <repository-url>
+   git clone https://github.com/intelligensi-ai/theme-craft-hackathon.git
    cd theme-craft-hackathon/frontend
 
 2. Install dependencies
@@ -123,7 +123,7 @@ frontend/
 └── README.md
 ```
 
-## Backend
+### Backend
 
 ## Prerequisites
 Node.js v20+
@@ -134,7 +134,6 @@ Firebase account (you'll be added to the shared project)
 
 ## 1. Clone and Install
 
-git clone https://github.com/intelligensi-ai/Intelligensi.ai.v2.git
 cd Intelligensi.ai.v2/backend/functions
 npm install
 
