@@ -1,16 +1,22 @@
 import type { Request } from "firebase-functions/v2/https";
 import { onRequest, HttpsError } from "firebase-functions/v2/https";
 import { createClient } from "@supabase/supabase-js";
-import { defineSecret } from "firebase-functions/params";
+import * as dotenv from "dotenv";
 import cors from "cors";
 
-// Firebase Secrets
-const supabaseUrl = defineSecret("SUPABASE_URL");
-const supabaseKey = defineSecret("SUPABASE_KEY");
+// Load environment variables
+dotenv.config();
+
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing required env variables: SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env file");
+}
 
 // Initialize Supabase Client
 const getSupabaseClient = () =>
-  createClient(supabaseUrl.value(), supabaseKey.value(), {
+  createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false },
   });
 
@@ -19,7 +25,7 @@ const corsHandler = cors({ origin: true });
 
 // Fetch all users
 export const fetchusers = onRequest(
-  { cors: false, secrets: [supabaseUrl, supabaseKey] },
+  { cors: false },
   (req: Request, res) => {
     corsHandler(req, res, async (err?: Error) => {
       if (err) {
@@ -65,7 +71,7 @@ export const fetchusers = onRequest(
 
 // Update user
 export const updateuser = onRequest(
-  { cors: false, secrets: [supabaseUrl, supabaseKey] },
+  { cors: false },
   (req: Request, res) => {
     corsHandler(req, res, async (err?: Error) => {
       if (err) {
@@ -142,7 +148,7 @@ export const updateuser = onRequest(
 
 // Fetch single user
 export const fetchuser = onRequest(
-  { cors: false, secrets: [supabaseUrl, supabaseKey] },
+  { cors: false },
   (req: Request, res) => {
     corsHandler(req, res, async (err?: Error) => {
       if (err) {

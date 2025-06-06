@@ -1,23 +1,24 @@
 import type { Request } from "firebase-functions/v2/https";
 import { onRequest, HttpsError } from "firebase-functions/v2/https";
 import { createClient } from "@supabase/supabase-js";
-import { defineSecret } from "firebase-functions/params";
 import cors from "cors";
 import { z } from "zod";
+import * as dotenv from "dotenv";
 
-// Firebase Secrets for Supabase
-const supabaseUrl = defineSecret("SUPABASE_URL");
-// Ensure this is the service_role key or a key with delete permissions
-const supabaseKey = defineSecret("SUPABASE_KEY");
+// Load environment variables from .env file
+dotenv.config();
+
+// Get Supabase configuration from environment variables
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  throw new Error("Missing required env variables: SUPABASE_URL and SUPABASE_ANON_KEY must be set in .env file");
+}
 
 // Initialize Supabase Client
 const getSupabaseClient = () => {
-  const url = supabaseUrl.value();
-  const key = supabaseKey.value();
-  if (!url || !key) {
-    throw new HttpsError("internal", "Supabase URL or Key is not configured.");
-  }
-  return createClient(url, key, {
+  return createClient(supabaseUrl, supabaseKey, {
     auth: { persistSession: false },
   });
 };
@@ -34,7 +35,7 @@ const deleteSiteSchema = z.object({
  * Deletes a site and its associated data from Supabase.
  */
 export const deleteSite = onRequest(
-  { secrets: [supabaseUrl, supabaseKey], cors: false }, // Let corsHandler manage CORS headers
+  { cors: false },// Let corsHandler manage CORS headers
   (req: Request, res) => {
     corsHandler(req, res, async (err?: Error) => {
       if (err) {
