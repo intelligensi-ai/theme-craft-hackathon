@@ -1,237 +1,152 @@
-import axios from "axios";
+import axios, { AxiosError } from "axios";
 import { onRequest } from "firebase-functions/v2/https";
 import * as dotenv from "dotenv";
 
-// Load environment variables for local development
-if (process.env.NODE_ENV !== "production") {
-  dotenv.config();
+// Load environment variables
+dotenv.config();
+
+// Get OpenAI API key from environment
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+if (!OPENAI_API_KEY) {
+  throw new Error("OPENAI_API_KEY is not set in environment variables");
 }
 
-// Define custom request and response types for better type safety
-type FirebaseRequest = {
-  method: string;
-  path: string;
-  body: any;
-  query: any;
-  params: any;
-  headers: Record<string, string | string[] | undefined>;
-};
-
-type FirebaseResponse = {
-  set: (headers: Record<string, string | string[]>) => FirebaseResponse;
-  status: (code: number) => FirebaseResponse;
-  json: (body: any) => void;
-  send: (body: string) => void;
-  end: () => void;
-};
-
 /**
- * Retrieves the OpenAI API key from the appropriate source based on the environment.
- * In production, it uses Firebase environment configuration.
- * In development, it falls back to the local .env file.
- *
- * @return {string} The OpenAI API key
+ * Sanitize text by removing HTML tags.
+ * @param {string} text - The text to sanitize.
+ * @return {string} - Sanitized text.
  */
-const getOpenAIApiKey = (): string => {
-  // Always load .env file first
-  dotenv.config();
-  
-  // Check environment variables
-  console.log('Environment Variables:', {
-    NODE_ENV: process.env.NODE_ENV,
-    FUNCTIONS_EMULATOR: process.env.FUNCTIONS_EMULATOR,
-    OPENAI_API_KEY: process.env.OPENAI_API_KEY ? '*** KEY EXISTS ***' : 'KEY MISSING'
-  });
-  
-  // Try to get the key from environment first
-  const envKey = process.env.OPENAI_API_KEY;
-  if (envKey) {
-    // Log first 8 and last 4 characters of the key for debugging
-    const maskedKey = envKey ? 
-      `${envKey.substring(0, 8)}...${envKey.substring(envKey.length - 4)}` : 
-      'NO KEY FOUND';
-    console.log('Using OpenAI API key:', maskedKey);
-    return envKey;
-  }
-  
-  // Fall back to Firebase config
-  try {
-    const config = require('firebase-functions').config();
-    console.log('Firebase config:', config);
-    return config?.openai?.api_key || '';
-  } catch (error) {
-    console.error('Error getting Firebase config:', error);
-    return '';
-  }
-};
-
-/**
- * Sanitizes HTML by removing all HTML tags from the input text.
- *
- * @param {string} text - The text to sanitize
- * @return {string} The sanitized text with HTML tags removed
- */
-function sanitizeHtml(text: string): string {
+function sanitizeText(text: string): string {
   if (!text) return "";
   return text.replace(/<[^>]*>?/gm, "");
 }
 
-/**
- * Health check endpoint
- */
-export const healthCheck = (req: FirebaseRequest, res: FirebaseResponse) => {
-  res.status(200).json({ status: "ok" });
-  return Promise.resolve();
-};
+// Homepage update function with CORS support
+// Define the handler function separately
+const updateHomepageHandler = async (req: any, res: any) => {
+  // Set response headers
+  res.set('Content-Type', 'application/json');
+  
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.status(204).send();
+    return;
+  }
 
-/**
- * Handles updating the homepage content using OpenAI and Drupal API
- */
-export const updateHomepage = async (req: FirebaseRequest, res: FirebaseResponse) => {
+  // Log request info for debugging
+  console.log("Request received:", {
+    method: req.method,
+    path: req.path,
+    body: req.body
+  });
+
   try {
-    const { prompt } = req.body;
-
+    // Validate request
+    const { prompt } = req.body || {};
     if (!prompt) {
-      return res.status(400).json({ error: "Prompt is required" });
+      res.status(400).json({ error: "Prompt is required in the request body" });
+      return;
     }
 
-    const openaiApiKey = getOpenAIApiKey();
-
-    if (!openaiApiKey) {
-      throw new Error("OpenAI API key not configured. Set OPENAI_API_KEY in your env variables or Firebase config.");
-    }
-
-    console.log('Sending request to OpenAI API...');
-
-    try {
-      const openAIResponse = await axios.post(
-        "https://api.openai.com/v1/chat/completions",
-        {
-          model: "gpt-4",
-          messages: [
-            { 
-              role: "system", 
-              content: "You are a helpful assistant that generates content for a website homepage. Respond with just the content, no additional formatting or explanations." 
-            },
-            { 
-              role: "user", 
-              content: prompt 
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 1000,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${openaiApiKey}`,
+    // Call OpenAI API
+    const openAIResponse = await axios.post(
+      "https://api.openai.com/v1/chat/completions",
+      {
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: "You are a helpful assistant that updates website homepage content."
           },
-          validateStatus: () => true, // Ensure we get the response even if it's an error
-        }
-      );
-
-      console.log('OpenAI API response received');
-      console.log('Full OpenAI response:', JSON.stringify(openAIResponse.data, null, 2));
-
-      // Check for errors in the response
-      if (!openAIResponse.data.choices || openAIResponse.data.choices.length === 0) {
-        console.error('No choices in response:', openAIResponse.data);
-        throw new Error('No content generated by OpenAI - empty choices array');
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        tools: [
+          {
+            type: "function",
+            function: {
+              name: "update_homepage",
+              strict: false,
+              parameters: {
+                type: "object",
+                required: ["updateText"],
+                properties: {
+                  updateText: {
+                    type: "string",
+                    description: "The text to update the homepage with.",
+                  },
+                },
+              },
+              description: "Updates the homepage with the provided text.",
+            },
+          },
+        ],
+        temperature: 1,
+        max_tokens: 2048,
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        },
       }
+    );
 
-      const generatedText = openAIResponse.data.choices[0]?.message?.content?.trim();
-      
-      if (!generatedText) {
-        console.error('No generated text in response:', openAIResponse.data);
-        throw new Error('No content generated by OpenAI - empty message content');
+    // Process OpenAI response
+    const toolCall = openAIResponse.data.choices?.[0]?.message?.tool_calls?.[0];
+
+    if (toolCall?.function?.name === "update_homepage") {
+      if (!toolCall.function.arguments) {
+        throw new Error("Function arguments are undefined");
       }
       
-      console.log('Generated text:', generatedText);
+      const { updateText } = JSON.parse(toolCall.function.arguments);
+      const sanitizedText = sanitizeText(updateText);
 
-      // Sanitize the generated text
-      const sanitizedText = sanitizeHtml(generatedText);
-
-      // Send the update to Drupal
+      // Update Drupal
       const drupalResponse = await axios.post(
         "https://drupal7.intelligensi.online/api/update-homepage",
-        { text: sanitizedText },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          validateStatus: () => true, // Ensure we get the response even if it's an error
+        { update_text: sanitizedText },
+        { 
+          headers: { 
+            "Content-Type": "application/json" 
+          } 
         }
       );
 
-      if (drupalResponse.status !== 200) {
-        throw new Error(
-          `Drupal API error: ${drupalResponse.status} - ${JSON.stringify(drupalResponse.data)}`
-        );
-      }
-
-      console.log("Homepage updated successfully");
       res.status(200).json({
-        success: true,
         message: "Homepage updated successfully",
         generatedText: sanitizedText,
+        drupalResponse: drupalResponse.data,
       });
-    } catch (error: unknown) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      const errorStack = error instanceof Error ? error.stack : undefined;
-      const errorResponse = error && typeof error === 'object' && 'response' in error 
-        ? (error as any).response?.data 
-        : undefined;
-        
-      console.error('Error in update homepage:', {
-        message: errorMessage,
-        stack: errorStack,
-        response: errorResponse
-      });
-      
-      res.status(500).json({ 
-        error: 'Internal server error', 
-        details: errorMessage,
-        ...(process.env.NODE_ENV !== 'production' && { stack: errorStack })
-      });
+    } else {
+      // If no tool call, return the assistant's message
+      const message = openAIResponse.data.choices?.[0]?.message?.content ||
+        "No content generated by the AI model.";
+      res.status(200).json({ message });
     }
-  } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    console.error('Error in update homepage:', errorMessage);
-    res.status(500).json({
-      error: "Internal server error",
-      details: errorMessage,
-      ...(process.env.NODE_ENV !== 'production' && { 
-        stack: error instanceof Error ? error.stack : undefined 
-      })
-    });
+  } catch (error) {
+    console.error("Error in update process:", error);
+    
+    // Handle different error types
+    const statusCode = error instanceof AxiosError && error.response?.status || 500;
+    const errorMessage = error instanceof Error ? error.message : "Unknown error";
+    const errorDetails = error instanceof AxiosError ? error.response?.data : undefined;
+    
+    const errorResponse = {
+      error: "Failed to process your request",
+      message: errorMessage,
+      ...(errorDetails && { details: errorDetails })
+    };
+    
+    res.status(statusCode).json(errorResponse);
   }
-  
-  return Promise.resolve();
 };
 
-// Export as Firebase Functions with proper typing
-export const openaiFunctions = {
-  healthCheck: onRequest(async (req, res) => {
-    try {
-      await healthCheck(req, res);
-    } catch (error) {
-      console.error('Health check error:', error);
-      res.status(500).json({ error: 'Internal server error' });
-    }
-  }),
-  updateHomepage: onRequest(async (req, res) => {
-    try {
-      await updateHomepage(req, res);
-    } catch (error) {
-      console.error('Update homepage error:', error);
-      res.status(500).json({ 
-        error: 'Internal server error',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-  })
-};
-
-// No need to start a server in development, as it will be handled by Firebase Functions
-
-// No need to start a server in development, as it will be handled by Firebase Functions
+// Export the wrapped function
+export const updateHomepage = onRequest(
+  { cors: true },
+  updateHomepageHandler
+);

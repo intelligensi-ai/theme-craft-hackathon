@@ -7,7 +7,7 @@ import express, { json as expressJson } from "express";
 import cors from "cors";
 
 // Import routes
-import { openaiFunctions } from "./routes/openaiRoutes";
+import { updateHomepage } from "./routes/openaiRoutes";
 import drupal7Router from "./migrations/drupal7Migrations";
 import authRouter from "./routes/authRoutes";
 
@@ -62,5 +62,5 @@ export const auth = onRequest(
 );
 
 // Export OpenAI functions
-export const { healthCheck, updateHomepage } = openaiFunctions;
+export { updateHomepage };
 
