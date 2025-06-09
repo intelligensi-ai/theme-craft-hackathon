@@ -2,6 +2,20 @@ import axios, { AxiosError } from "axios";
 import { onRequest } from "firebase-functions/v2/https";
 import * as dotenv from "dotenv";
 
+// Define minimal types for the request and response objects
+interface Request {
+  method?: string;
+  path?: string;
+  body?: Record<string, unknown>;
+}
+
+interface Response {
+  set: (header: string, value: string) => void;
+  status: (code: number) => Response;
+  send: (body?: string | object) => void;
+  json: (body: Record<string, unknown>) => void;
+}
+
 // Load environment variables
 dotenv.config();
 
@@ -23,10 +37,17 @@ function sanitizeText(text: string): string {
 
 // Homepage update function with CORS support
 // Define the handler function separately
-const updateHomepageHandler = async (req: any, res: any) => {
+// Extend the Request type to include our expected body structure
+interface UpdateHomepageRequest extends Request {
+  body: {
+    prompt?: string;
+  };
+}
+
+const updateHomepageHandler = async (req: UpdateHomepageRequest, res: Response) => {
   // Set response headers
-  res.set('Content-Type', 'application/json');
-  
+  res.set("Content-Type", "application/json");
+
   // Handle preflight requests
   if (req.method === "OPTIONS") {
     res.status(204).send();
@@ -37,7 +58,7 @@ const updateHomepageHandler = async (req: any, res: any) => {
   console.log("Request received:", {
     method: req.method,
     path: req.path,
-    body: req.body
+    body: req.body,
   });
 
   try {
@@ -56,12 +77,12 @@ const updateHomepageHandler = async (req: any, res: any) => {
         messages: [
           {
             role: "system",
-            content: "You are a helpful assistant that updates website homepage content."
+            content: "You are a helpful assistant that updates website homepage content.",
           },
           {
             role: "user",
-            content: prompt
-          }
+            content: prompt,
+          },
         ],
         tools: [
           {
@@ -101,7 +122,7 @@ const updateHomepageHandler = async (req: any, res: any) => {
       if (!toolCall.function.arguments) {
         throw new Error("Function arguments are undefined");
       }
-      
+
       const { updateText } = JSON.parse(toolCall.function.arguments);
       const sanitizedText = sanitizeText(updateText);
 
@@ -109,10 +130,10 @@ const updateHomepageHandler = async (req: any, res: any) => {
       const drupalResponse = await axios.post(
         "https://drupal7.intelligensi.online/api/update-homepage",
         { update_text: sanitizedText },
-        { 
-          headers: { 
-            "Content-Type": "application/json" 
-          } 
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
         }
       );
 
@@ -129,18 +150,18 @@ const updateHomepageHandler = async (req: any, res: any) => {
     }
   } catch (error) {
     console.error("Error in update process:", error);
-    
+
     // Handle different error types
     const statusCode = error instanceof AxiosError && error.response?.status || 500;
     const errorMessage = error instanceof Error ? error.message : "Unknown error";
     const errorDetails = error instanceof AxiosError ? error.response?.data : undefined;
-    
+
     const errorResponse = {
       error: "Failed to process your request",
       message: errorMessage,
-      ...(errorDetails && { details: errorDetails })
+      ...(errorDetails && { details: errorDetails }),
     };
-    
+
     res.status(statusCode).json(errorResponse);
   }
 };
